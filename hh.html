@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle des Pompes et Niveaux</title>
+        <title>ferradj_hemeci_kechida</title>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+        }
+        .pump-control, .reservoir {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        .status {
+            font-weight: bold;
+            color: green;
+        }
+        .level {
+            font-size: 18px;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestion des Pompes et Niveaux de Réservoirs</h1>
+    
+    <h2>Niveaux des Réservoirs</h2>
+    <div class="reservoir">Réservoir 1 : <span id="reservoir1" class="level">--%</span></div>
+    <div class="reservoir">Réservoir 2 : <span id="reservoir2" class="level">--%</span></div>
+    <div class="reservoir">Réservoir 3 : <span id="reservoir3" class="level">--%</span></div>
+
+    <h2>Contrôle des Pompes</h2>
+    <div class="container">
+        <div class="pump-control">
+            <h3>Pompe 1</h3>
+            <button onclick="envoyerCommande('POMPE1_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE1_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe1" class="status">Inconnu</span></p>
+        </div>
+        <div class="pump-control">
+            <h3>Pompe 2</h3>
+            <button onclick="envoyerCommande('POMPE2_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE2_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe2" class="status">Inconnu</span></p>
+        </div>
+        <div class="pump-control">
+            <h3>Pompe 3</h3>
+            <button onclick="envoyerCommande('POMPE3_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE3_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe3" class="status">Inconnu</span></p>
+        </div>
+        <div class="pump-control">
+            <h3>Pompe 4</h3>
+            <button onclick="envoyerCommande('POMPE4_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE4_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe4" class="status">Inconnu</span></p>
+        </div>
+        <div class="pump-control">
+            <h3>Pompe 5</h3>
+            <button onclick="envoyerCommande('POMPE5_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE5_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe5" class="status">Inconnu</span></p>
+        </div>
+        <div class="pump-control">
+            <h3>Pompe 6</h3>
+            <button onclick="envoyerCommande('POMPE6_ON')">Allumer</button>
+            <button onclick="envoyerCommande('POMPE6_OFF')">Éteindre</button>
+            <p>État: <span id="etat_pompe6" class="status">Inconnu</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Connexion au broker MQTT
+        const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
+
+        client.on("connect", function () {
+            console.log("Connecté à MQTT");
+            client.subscribe("station/pompe/etat");
+            client.subscribe("station/reservoir/niveau");
+        });
+
+        // Fonction pour envoyer une commande MQTT
+        function envoyerCommande(commande) {
+            client.publish("station/pompe/commande", commande);
+            console.log("Commande envoyée: " + commande);
+        }
+
+        // Gestion des messages MQTT reçus
+        client.on("message", function (topic, message) {
+            console.log("Message reçu sur " + topic + " : " + message.toString());
+
+            if (topic === "station/pompe/etat") {
+                let etats = message.toString().split(", ");
+                etats.forEach(etat => {
+                    let parts = etat.split(":");
+                    let pompe = parts[0].toLowerCase();
+                    let status = parts[1] === "ON" ? "Allumée" : "Éteinte";
+                    document.getElementById(`etat_${pompe}`).innerText = status;
+                });
+            } else if (topic === "station/reservoir/niveau") {
+                let niveaux = message.toString().split(", ");
+                niveaux.forEach(niveau => {
+                    let parts = niveau.split(":");
+                    let reservoir = parts[0].toLowerCase();
+                    document.getElementById(reservoir).innerText = parts[1] + "%";
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>
